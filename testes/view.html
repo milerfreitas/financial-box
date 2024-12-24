@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estrutura do Banco de Dados</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <h1>Estrutura do Banco de Dados</h1>
+    <div id="tables-container"></div>
+    <script>
+        // URL do script PHP que retorna o JSON
+        const apiUrl = "describe-tables.php";
+
+        // Função para carregar e renderizar as tabelas
+        async function loadTables() {
+            try {
+                const response = await fetch(apiUrl);
+                const databaseStructure = await response.json();
+
+                // Verificar se há erro
+                if (databaseStructure.error) {
+                    document.getElementById("tables-container").innerHTML = `<p>${databaseStructure.error}</p>`;
+                    return;
+                }
+
+                // Adicionar tabelas dinamicamente
+                const container = document.getElementById("tables-container");
+                databaseStructure.tables.forEach(table => {
+                    const tableHTML = `
+                        <h2>Tabela: ${table.name}</h2>
+                        <table id="${table.name}" class="display">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Tipo</th>
+                                    <th>Nulo</th>
+                                    <th>Chave</th>
+                                    <th>Default</th>
+                                    <th>Extra</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${table.columns ? table.columns.map(col => `
+                                    <tr>
+                                        <td>${col.field}</td>
+                                        <td>${col.type}</td>
+                                        <td>${col.null}</td>
+                                        <td>${col.key}</td>
+                                        <td>${col.default ?? "N/A"}</td>
+                                        <td>${col.extra}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="6">Erro ao carregar a tabela.</td></tr>'}
+                            </tbody>
+                        </table>
+                    `;
+                    container.innerHTML += tableHTML;
+                });
+
+                // Inicializar DataTables
+                document.querySelectorAll("table").forEach(table => {
+                    $(table).DataTable();
+                });
+            } catch (error) {
+                console.error("Erro ao carregar os dados:", error);
+                document.getElementById("tables-container").innerHTML = "<p>Erro ao carregar os dados do banco de dados.</p>";
+            }
+        }
+
+        // Carregar as tabelas ao iniciar
+        loadTables();
+    </script>
+</body>
+</html>
